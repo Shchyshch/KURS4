@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 
 class API(ABC):
     """Абстрактный класс для работы с API сайтов с вакансиями"""
-    def __init__(self, keyword):
+    def __init__(self, keyword: str):
         self.keyword = keyword
         self.vacancies = []
 
@@ -34,7 +34,7 @@ class HH(API):
             response = requests.get(url, params=params).json()
             self.vacancies.extend(response['items'])
 
-    def get_formatted_vacancies(self):
+    def get_formatted_vacancies(self) -> list:
         """Возвращает вакансии с зарплатой в рублях"""
         formatted_vacancies = []
         for vacancy in self.vacancies:
@@ -71,7 +71,7 @@ class SJ(API):
             response = requests.get(url, headers=headers, params=params).json()
             self.vacancies.extend(response['objects'])
 
-    def get_formatted_vacancies(self):
+    def get_formatted_vacancies(self) -> list:
         """Возвращает вакансии с зарплатой в рублях"""
         formatted_vacancies = []
         for vacancy in self.vacancies:
@@ -90,7 +90,7 @@ class SJ(API):
 
 class Vacancy:
     """Класс для работы с вакансиями"""
-    def __init__(self, vacancy):
+    def __init__(self, vacancy: dict):
         self.name = vacancy['name']
         self.area = vacancy['area']
         if vacancy['salary_from'] is None:
@@ -104,6 +104,7 @@ class Vacancy:
         self.requirement = vacancy['requirement']
 
     def __gt__(self, other):
+        """Метод сравнения вакансий по минимальной зарплате"""
         return self.salary_from > other.salary_from
 
     def __str__(self):
@@ -116,26 +117,30 @@ class Vacancy:
 
 class JSONSaver:
     """Класс для сохранения информации о вакансиях в JSON-файл"""
-    def __init__(self, filename, vacancies):
+    def __init__(self, filename: str, vacancies: list):
         self.filename = filename
         self.create_file(vacancies)
 
-    def create_file(self, vacancies):
+    def create_file(self, vacancies: list):
+        """Сохраняет информацию в json-файл"""
         with open(self.filename, 'w', encoding='utf-8') as f:
             json.dump(vacancies, f, indent=2, ensure_ascii=False)
 
-    def select_all(self):
+    def select_all(self) -> list:
+        """Выводит информацию о всех найденных вакансиях"""
         with open(self.filename, 'r') as f:
             data = json.load(f)
         vacancy_data = [Vacancy(x) for x in data]
         return vacancy_data
 
-    def sorted_by_salary(self):
+    def sorted_by_salary(self) -> list:
+        """Сортирует вакансии по возрастанию нижней границы указанной зарплаты"""
         vacancy_data = self.select_all()
         sorted_data = sorted(vacancy_data)
         return sorted_data
 
-    def top_ten(self):
+    def top_ten(self) -> list:
+        """Выводит топ-10 вакансий с самой высокой указанной минимальной зарплатой"""
         vacancy_data = self.select_all()
         sorted_data = sorted(vacancy_data, reverse=True)
         return sorted_data[:10]
